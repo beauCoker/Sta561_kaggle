@@ -1,0 +1,129 @@
+---
+title: "R Notebook"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+
+```{r}
+
+```
+
+
+```{r}
+# Fit model on contiuous variables
+train_num <- train %>% select(var_num,loss)
+
+fitlm <- lm(loss ~ ., data = train_num)
+
+pred <- predict(fitlm)
+
+
+```
+
+Support vector machines:
+
+```{r}
+library(caret)
+
+#input <- select(train_rs,-var_cat)
+input <- select(train_rs,71:80,loss)
+
+svmFit <- train(loss ~ .,
+                data = input,
+                method = "svmRadial",
+                tuneLength = 5,
+                trControl = trainControl(method = "repeatedcv",
+                                         repeats = 5))
+
+plot(svmFit, scales = list(x = list(log = 2)))
+
+pred <- predict(svmFit, input)
+
+plot(pred,input$loss)
+```
+
+CART:
+
+```{r}
+input <- select(train_rs,-var_cat)
+#input <- select(train_rs,71:80,loss)
+
+cartFit <- train(loss ~ ., 
+                   data=input, 
+                   method = "rpart", 
+                   tuneLength=5,
+                   trControl = trainControl(method = "repeatedcv",
+                                            repeats = 5))
+
+plot(cartFit, scales = list(x = list(log = 2)))
+
+pred <- predict(cartFit, input)
+
+plot(pred,input$loss)
+```
+
+C5.0:
+
+```{r}
+library(plyr); library(dplyr)
+
+input <- select(train_rs,1:10,loss)
+
+c50Fit <- train(loss ~ ., 
+                   data=input, 
+                   method = "C5.0", 
+                   tuneLength=5,
+                   trControl = trainControl(method = "repeatedcv",
+                                            repeats = 5))
+
+plot(c50Fit, scales = list(x = list(log = 2)))
+
+pred <- predict(c50Fit, input)
+
+plot(pred,input$loss)
+```
+
+Boosted trees:
+
+```{r}
+input <- select(train_rs,1:10,loss)
+
+gbmFit <- train(loss ~ ., 
+                   data=input, 
+                   method = "gbm", 
+                   tuneLength=5,
+                   verbose=FALSE,
+                   trControl = trainControl(method = "repeatedcv",
+                                            repeats = 5))
+
+plot(gbmFit, scales = list(x = list(log = 2)))
+
+pred <- predict(gbmFit, input)
+
+plot(pred,input$loss)
+```
+
+
+Random forest:
+
+```{r}
+input <- select(train_rs,71:80,loss)
+
+rfFit <- train(loss ~ ., 
+                   data=input, 
+                   method = "rf", 
+                   tuneLength=5,
+                   verbose=FALSE,
+                   trControl = trainControl(method = "repeatedcv",
+                                            repeats = 5))
+
+plot(rfFit, scales = list(x = list(log = 2)))
+
+pred <- predict(rfFit, input)
+
+plot(pred,input$loss)
+```
+
+

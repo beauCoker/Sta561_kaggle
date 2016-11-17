@@ -1,0 +1,95 @@
+---
+title: "R Notebook"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r message=FALSE}
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+library(e1071)
+library(corrplot)
+```
+
+
+```{r}
+load("input.Rdata")
+```
+
+Stolen plotting functions:
+
+```{r}
+plotBox <- function(data_in, i, lab) {
+  data <- data.frame(x=data_in[[i]], y=as.vector(lab))
+  p <- ggplot(data=data, aes(x=x, y=y)) +geom_boxplot()+ xlab(colnames(data_in)[i]) + theme_light() + 
+   ylab("log(loss)") + theme(axis.text.x = element_text(angle = 90, hjust =1))
+  return (p)
+}
+
+doPlots <- function(data_in, fun, ii, lab, ncol=3) {
+  pp <- list()
+  for (i in ii) {
+    p <- fun(data_in=data_in, i=i, lab=lab)
+    pp <- c(pp, list(p))
+  }
+  do.call("grid.arrange", c(pp, ncol=ncol))
+}
+
+plotScatter <- function(data_in, i, lab){
+  data <- data.frame(x=data_in[[i]], y = as.vector(lab))
+  p <- ggplot(data= data, aes(x = x, y=y)) + geom_point(size=1, alpha=0.3)+ geom_smooth(method = lm) +
+    xlab(paste0(colnames(data_in)[i], '\n', 'R-Squared: ', round(cor(data_in[[i]], lab, use = 'complete.obs'), 2)))+
+    ylab("log(loss)") + theme_light()
+  return(suppressWarnings(p))
+} 
+
+plotDen <- function(data_in, i, lab){
+  data <- data.frame(x=data_in[[i]], y=as.vector(lab))
+  p <- ggplot(data= data) + geom_density(aes(x = x), size = 1,alpha = 1.0) +
+    xlab(paste0((colnames(data_in)[i]), '\n', 'Skewness: ',round(skewness(data_in[[i]], na.rm = TRUE), 2))) +
+    theme_light() 
+  return(p)
+}
+```
+
+Now try them out:
+
+
+```{r}
+plotBox(train, var_cat[1], log(train$loss))
+doPlots(train, plotBox, var_cat[1:6], log(train$loss))
+```
+
+```{r}
+plotScatter(train, var_num[1], log(train$loss))
+
+doPlots(train, plotScatter, var_num[1:6], log(train$loss))
+```
+
+
+
+```{r}
+plotDen(train, var_num[1], log(train$loss))
+
+doPlots(train, plotDen, var_num[1:6], log(train$loss))
+```
+
+
+
+```{r}
+correlations <- cor(train[var_num])
+corrplot(correlations, method="square", order="hclust")
+```
+
+```{r}
+# Number of categories in each
+sapply(train[var_cat],function(x) length(unique(x)))
+
+# Counts for each category
+sapply(train[var_cat],table)
+
+
+```
+

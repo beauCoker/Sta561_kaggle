@@ -1,0 +1,52 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r message=FALSE}
+library(readr)
+library(dplyr)
+```
+
+```{r message=FALSE}
+rm(list=ls())
+
+# Load data
+train <- read_csv("Data/pml_train.csv")
+test <- read_csv("Data/pml_test_features.csv")
+
+# Data processing
+train <- train %>% select(-id) %>% mutate_if(is.character,as.factor)
+test <- test %>% select(-id) %>% mutate_if(is.character,as.factor)
+
+# Categorical vs. continuous
+var_cat <- as.vector(which(sapply(train, is.factor)))
+var_num <- as.vector(which(sapply(train, is.numeric)))
+var_num <- setdiff(var_num, 131)
+```
+
+
+```{r}
+standardize <- function(x){
+  (x - mean(x))/sd(x)
+}
+
+train[var_num] <- train[var_num] %>% mutate_all(standardize)
+```
+
+```{r}
+n_obs <- dim(train)[1]
+n_rs <- 1000
+
+set.seed(1)
+rs <- sample(1:n_obs, n_rs)
+
+train_rs <- train[rs, ]
+```
+
+
+```{r}
+save(list=c("train","test","train_rs","var_cat","var_num"),
+     file="Data/input.Rdata")
+```
+
