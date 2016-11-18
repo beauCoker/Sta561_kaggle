@@ -16,6 +16,9 @@ train <- read_csv("Data/pml_train.csv")
 test <- read_csv("Data/pml_test_features.csv")
 
 # Data processing
+id_train <- train %>% select(id)
+id_test <- test %>% select(id)
+
 train <- train %>% select(-id) %>% mutate_if(is.character,as.factor)
 test <- test %>% select(-id) %>% mutate_if(is.character,as.factor)
 
@@ -34,6 +37,21 @@ standardize <- function(x){
 train[var_num] <- train[var_num] %>% mutate_all(standardize)
 ```
 
+Convert loss to log loss:
+
+```{r}
+# MAKE SURE TO ONLY RUN THIS ONCE
+train$loss <- log(train$loss)
+```
+
+```{r}
+save(list=c("train","test","var_cat","var_num","id_train","id_test"),
+     file="Data/input.Rdata")
+```
+
+## Everything below here is not included in the Rdata file
+
+Create a short sample of the data (useful for testing functions):
 ```{r}
 n_obs <- dim(train)[1]
 n_rs <- 1000
@@ -44,9 +62,17 @@ rs <- sample(1:n_obs, n_rs)
 train_rs <- train[rs, ]
 ```
 
+Other versions of training data
 
 ```{r}
-save(list=c("train","test","train_rs","var_cat","var_num"),
-     file="Data/input.Rdata")
-```
+library(Matrix)
 
+# Creates a sparse matrix (with dummy variables)
+train_sparse <- sparse.model.matrix(loss~.-1,data=train_rs)
+
+# Converts factors to integers
+train_num <- train %>% mutate_if(is.factor,as.integer) %>% mutate_all(function(x) x-1L)
+test_num <-  test %>% mutate_if(is.factor,as.integer) %>% mutate_all(function(x) x-1L)
+
+train_rs_num <- train_num[rs, ]
+```

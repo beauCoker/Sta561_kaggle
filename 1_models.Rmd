@@ -7,7 +7,7 @@ output:
 
 
 ```{r}
-
+load("Data/input.Rdata")
 ```
 
 
@@ -18,8 +18,6 @@ train_num <- train %>% select(var_num,loss)
 fitlm <- lm(loss ~ ., data = train_num)
 
 pred <- predict(fitlm)
-
-
 ```
 
 Support vector machines:
@@ -126,4 +124,80 @@ pred <- predict(rfFit, input)
 plot(pred,input$loss)
 ```
 
+xgboost:
+
+
+```{r}
+library(xgboost)
+
+input_x <- select(train_rs_num,-loss)
+input_y <- log(train_rs_num$loss)
+
+dtrain <- xgb.DMatrix(as.matrix(input_x), label=as.matrix(input_y))
+
+feval <- function(preds, dtrain) {
+  labels <- getinfo(dtrain, "label")
+  err <- sum(abs(exp(labels) - exp(preds)))/length(labels)
+  return(list(metric = "error", value = err))
+}
+
+obj_func <- function(preds, dtrain) {
+  labels <- getinfo(dtrain, "label")
+  grad <- tanh(preds-labels)
+  hess <- 1-grad*grad
+  return(list(grad = grad, hess = hess))
+}
+
+# Initialize
+p <- c(3,6)
+mdcv_list <- list()
+n_rounds_best <- NULL
+i_best <- NULL
+min_loss_best <- 1e12
+
+for (i in length(p)){
+  
+  param <- list(
+    objective = obj_func,
+    eval_metric = feval,
+    max_depth = p[i],
+    eta = 0.03
+  )
+  
+  cv.nround = 50
+  cv.nfold = 5
+  
+  mdcv <- xgb.cv(data = dtrain, 
+                 params = param, 
+                 nthread=4, 
+                 nfold=cv.nfold, 
+                 nrounds=cv.nround,
+                 verbose = T)
+  
+  mdcv_list[[i]] <- mdcv
+  
+  min_loss = min(mdcv$evaluation_log[, test_error_mean])
+  
+  if (min_loss<min_loss_best){
+    i_best <- i
+    nrounds_best <- which.min(mdcv$evaluation_log[, test_error_mean])
+  }
+}
+
+param <- list(
+  objective = obj_func,
+  eval_metric = feval,
+  max_depth = p[i_best],
+  eta = 0.03
+)
+
+md_best <- xgb.train(data=dtrain, params=param, nrounds=nrounds_best, nthread=4)
+
+pred <- exp(predict(md_best, as.matrix(test_num)))
+```
+
+```{r}
+out <- id_test %>% mutate(loss=pred)
+write_csv(out,"Submissions/submission1.csv")
+```
 
