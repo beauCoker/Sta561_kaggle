@@ -8,7 +8,25 @@ library(readr)
 library(dplyr)
 ```
 
-Make sure to load the date first.
+Make sure to load the data first.
+
+```{r}
+# Numerical version (levels inherited from train)
+train_num <- train
+test_num <- test
+for(i in 1:length(var_cat)){
+  
+  levels_train <- levels(train_num[[i]])
+  levels_test <- levels(test_num[[i]])
+  levels_both <- union(levels_train,levels_test)
+  
+  levels(train_num[[i]]) <- levels_both
+  levels(test_num[[i]]) <- levels_both
+  
+  train_num[[i]] <- as.integer(train_num[[i]])
+  test_num[[i]] <- as.integer(test_num[[i]])
+}
+```
 
 Create a short sample of the data (useful for testing functions):
 
@@ -20,6 +38,8 @@ set.seed(1)
 rs <- sample(1:n_obs, n_rs)
 
 train_rs <- train[rs, ]
+
+train_rs_num <- train_num[rs, ]
 ```
 
 Other versions of training data
@@ -29,10 +49,4 @@ library(Matrix)
 
 # Creates a sparse matrix (with dummy variables)
 train_sparse <- sparse.model.matrix(loss~.-1,data=train_rs)
-
-# Converts factors to integers
-train_num <- train %>% mutate_if(is.factor,as.integer)
-test_num <-  test %>% mutate_if(is.factor,as.integer)
-
-train_rs_num <- train_num[rs, ]
 ```

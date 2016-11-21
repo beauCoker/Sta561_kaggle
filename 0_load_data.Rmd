@@ -44,6 +44,7 @@ Convert loss to log loss:
 train$loss <- log(200 + train$loss)
 ```
 
+
 ```{r}
 save(list=c("train","test","var_cat","var_num","id_train","id_test"),
      file="Data/input.Rdata")
