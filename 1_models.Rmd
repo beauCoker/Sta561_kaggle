@@ -130,8 +130,8 @@ xgboost:
 ```{r}
 library(xgboost)
 
-input_x <- select(train_rs_num,-loss)
-input_y <- log(train_rs_num$loss)
+input_x <- select(train_num,-loss)
+input_y <- train_num$loss
 
 dtrain <- xgb.DMatrix(as.matrix(input_x), label=as.matrix(input_y))
 
@@ -149,7 +149,7 @@ obj_func <- function(preds, dtrain) {
 }
 
 # Initialize
-p <- c(3,6)
+p <- c(6,12)
 mdcv_list <- list()
 n_rounds_best <- NULL
 i_best <- NULL
@@ -161,10 +161,11 @@ for (i in length(p)){
     objective = obj_func,
     eval_metric = feval,
     max_depth = p[i],
-    eta = 0.03
+    eta = 0.03,
+    base_score = 7.76
   )
   
-  cv.nround = 50
+  cv.nround = 1000
   cv.nfold = 5
   
   mdcv <- xgb.cv(data = dtrain, 
@@ -188,7 +189,8 @@ param <- list(
   objective = obj_func,
   eval_metric = feval,
   max_depth = p[i_best],
-  eta = 0.03
+  eta = 0.03,
+  base_score = 7.76
 )
 
 md_best <- xgb.train(data=dtrain, params=param, nrounds=nrounds_best, nthread=4)

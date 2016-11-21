@@ -1,0 +1,50 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r message=FALSE}
+library(readr)
+library(dplyr)
+```
+
+```{r message=FALSE}
+rm(list=ls())
+
+# Load data
+train <- read_csv("Data/pml_train.csv")
+test <- read_csv("Data/pml_test_features.csv")
+
+# Data processing
+id_train <- train %>% select(id)
+id_test <- test %>% select(id)
+
+train <- train %>% select(-id) %>% mutate_if(is.character,as.factor)
+test <- test %>% select(-id) %>% mutate_if(is.character,as.factor)
+
+# Categorical vs. continuous
+var_cat <- as.vector(which(sapply(train, is.factor)))
+var_num <- as.vector(which(sapply(train, is.numeric)))
+var_num <- setdiff(var_num, 131)
+```
+
+
+```{r}
+standardize <- function(x){
+  (x - mean(x))/sd(x)
+}
+
+train[var_num] <- train[var_num] %>% mutate_all(standardize)
+```
+
+Convert loss to log loss:
+
+```{r}
+# MAKE SURE TO ONLY RUN THIS ONCE
+train$loss <- log(200 + train$loss)
+```
+
+```{r}
+save(list=c("train","test","var_cat","var_num","id_train","id_test"),
+     file="Data/input.Rdata")
+```
