@@ -11,6 +11,11 @@ library(dplyr)
 Make sure to load the data first.
 
 ```{r}
+load("Data/input.Rdata")
+```
+
+
+```{r}
 # Numerical version (levels inherited from train)
 train_num <- train
 test_num <- test
@@ -32,14 +37,14 @@ Create a short sample of the data (useful for testing functions):
 
 ```{r}
 n_obs <- dim(train)[1]
-n_rs <- 1000
+n_rs <- 200
 
 set.seed(1)
 rs <- sample(1:n_obs, n_rs)
 
 train_rs <- train[rs, ]
 
-train_rs_num <- train_num[rs, ]
+train_num_rs <- train_num[rs, ]
 ```
 
 Other versions of training data
@@ -50,3 +55,34 @@ library(Matrix)
 # Creates a sparse matrix (with dummy variables)
 train_sparse <- sparse.model.matrix(loss~.-1,data=train_rs)
 ```
+
+Folds:
+
+```{r}
+### Divide data into folds
+
+cv_partition <- function(n, n_folds){
+  # Returns indices for folds
+  
+  set.seed(1263)
+  
+  rand_order <- sample(1:n,n)
+  size_fold <- round(n/n_folds)
+  rem <- n %% n_folds
+  
+  rem_vec <- c(rep(0,n_folds-1),rem)
+  folds <- list()
+  for (i in 0:(n_folds-1)) {
+    start <- size_fold * i + 1
+    end <- size_fold * (i+1)+rem_vec[i+1]
+    
+    folds[[i+1]] <- rand_order[start:end]
+  }
+  return(folds)
+}
+
+n <- dim(train_num_rs)[1] # Pick the right n here
+folds <- cv_partition(n, n_folds=5)
+###
+```
+
